@@ -1,0 +1,391 @@
+%! TEX program = pdflatex
+
+\documentclass[oneside,solution]{seu-ml-assign}
+
+\title{Assignment}
+\author{Xie xing}
+\studentID{58122204}
+\instructor{Xu-Ying Liu}
+\date{\today}
+\duedate{May 17, 2024}
+\assignno{3}
+\semester{SEU --- 2024 Spring}
+\mainproblem{Model Selection and Evaluation \& Neural Networks}
+
+\begin{document}
+
+\maketitle
+
+% \startsolution[print]
+
+\problem{Multi-layer Perception}
+%第一题
+\subproblem{}
+Given the network structure with one hidden layer and two neurons, we need to configure the weights
+and biases to model the XOR function $x_1 \oplus x_2$.
+
+\textbf{Neural Network Configuration:}
+
+\begin{itemize}
+  \item \textbf{First Hidden Neuron:}
+        \begin{itemize}
+          \item Weights: $w_{11} = 1$, $w_{12} = 1$
+          \item Bias: $b_1 = -1$
+        \end{itemize}
+        This gives the ReLU output:
+        \[
+          \text{ReLU}(w_{11}x_1 + w_{12}x_2 + b_1) = \text{ReLU}(x_1 + x_2 - 1)
+        \]
+
+  \item \textbf{Second Hidden Neuron:}
+        \begin{itemize}
+          \item Weights: $w_{21} = 1$, $w_{22} = 1$
+          \item Bias: $b_2 = -2$
+        \end{itemize}
+        This gives the ReLU output:
+        \[
+          \text{ReLU}(w_{21}x_1 + w_{22}x_2 + b_2) = \text{ReLU}(x_1 + x_2 - 2)
+        \]
+
+  \item \textbf{Output Neuron:}
+        \begin{itemize}
+          \item Weights: $w_{01} = 1$, $w_{02} = -2$
+          \item Bias: $b_0 = 0$
+        \end{itemize}
+        The output is computed as:
+        \[
+          f(w_{01}a_1 + w_{02}a_2 + b_0)
+        \]
+\end{itemize}
+
+\textbf{Output Analysis:}
+\begin{itemize}
+  \item When $x_1 = x_2 = 0$: Both hidden neurons output 0, leading to an output of 0.
+  \item When $x_1 = 1, x_2 = 0$ or $x_1 = 0, x_2 = 1$: The first hidden neuron outputs 1, the second outputs 0, and the final output is 1.
+  \item When $x_1 = x_2 = 1$: The first hidden neuron outputs 1, the second outputs 0, leading to an output of 0.
+\end{itemize}
+
+Thus, the network successfully models the XOR function.
+%第二题
+\subproblem{}
+
+Given the neural network structure with boolean inputs $x \in \{0,1\}^p$ and boolean output $y \in \{0,1\}$,
+we need to demonstrate that such a network can implement any arbitrary boolean function $h:\{0,1\}^p \to \{0,1\}$.
+We are allowed to use any finite number of neurons in the hidden layer, each followed by a threshold function.
+
+\textbf{\large{Strategy}}
+
+The strategy involves using a hidden layer that has enough neurons to represent every possible input combination.
+There are $2^p$ possible combinations for $p$ boolean inputs.
+
+\textbf{\large{Configuration}}
+\begin{itemize}
+  \item \textbf{Hidden Layer:} Introduce $2^p$ neurons in the hidden layer. Each neuron $n_i$ is dedicated to activating for
+        exactly one input combination that maps to 1 in the function $h$.
+  \item \textbf{Weights and Biases:} For each neuron $n_i$, configure the weights $\mathbf{w}_i$ and bias $b_i$ such that:
+        \begin{equation}
+          n_i = \text{ReLU}(\mathbf{w}_i \cdot \mathbf{x} + b_i)
+        \end{equation}
+        where $\mathbf{w}_i$ has a large positive value for inputs that should trigger $n_i$ and $b_i$ is set to slightly
+        less than the negative sum of the weights so that $n_i$ activates only when its corresponding input pattern is present.
+  \item \textbf{Output Layer:} The output neuron uses weights of 1 for all connections from the hidden neurons and a bias of $-0.5$
+        (assuming activation if the sum is positive). It computes the final output as:
+        \begin{equation}
+          y = f\left(\sum_{i=1}^{2^p} n_i - 0.5\right)
+        \end{equation}
+        where $f(v) = 1$ if $v > 0$ otherwise $f(v) = 0$.
+\end{itemize}
+
+\textbf{\large{Result}}
+
+This configuration allows each neuron in the hidden layer to represent a specific pattern of the input that corresponds to
+an output of 1 according to the function $h$. The output neuron effectively sums these activations to determine if the input
+combination should result in a 1 or 0, thus being able to represent any arbitrary boolean function $h$.
+
+
+\problem{Gradient explosion and gradient vanishing}
+From the meaning of the question, combined with the chain derivation rule, we can know:
+\begin{equation}
+  \begin{aligned}
+    \frac{\partial o}{\partial b_1} & = \frac{\partial o}{\partial h_3} \cdot \frac{\partial h_3}{\partial h_2} \cdot \frac{\partial h_2}{\partial h_1} \cdot \frac{\partial h_1}{\partial b_1} \\
+                                    & = w_4 \cdot w_3 \cdot \sigma'(w_3 h_2 + b_3) \cdot w_2 \cdot \sigma'(w_2 h_1 + b_2) \cdot \sigma'(w_1 x + b_1)                                            \\
+                                    & = w_4 \cdot w_3 \cdot w_2  [1 - \sigma(w_3 h_2 + b_3)] \cdot \sigma(w_3 h_2 + b_3)                                                                                       \\
+                                    & \quad \cdot [1 - \sigma(w_2 h_1 + b_2)] \cdot \sigma(w_2 h_1 + b_2)                                                                                       \\
+                                    & \quad \cdot [1 - \sigma(w_1 x + b_1)] \cdot \sigma(w_1 x + b_1)                                                                                           \\
+  \end{aligned}
+\end{equation}
+
+
+%第一题
+\subproblem{}
+Bring in $w_1 = 100$, $w_2 = 150$, $w_3 = 200$, $w_4 = 200$, $b_1 = -300$, $b_2 = -75$, $b_3 = -100$, $b_4 = 10$,we can get:
+\begin{equation}
+  \frac{\partial o}{\partial b_1} = 187500
+\end{equation}.
+
+%第二题
+\subproblem{}
+Bring in $w_1 = 0.2$, $w_2 = 0.5$, $w_3 = 0.3$, $w_4 = 0.6$, $b_1 = 1$, $b_2 = 2$, $b_3 = 2$, $b_4 = 1$,we can get:
+
+\begin{equation}
+  \frac{\partial o}{\partial b_1} = 0.000975758116082039
+\end{equation}.
+
+
+
+
+\problem{CNN}
+%第一题
+\subproblem{}
+The parameters of the CNN are $v_1, v_2, v_3, w_1, w_2, w_3, w_4$, so the total number of parameters in this neural network is 7.
+
+%第二题
+\subproblem{}
+$\frac{\partial L}{\partial w}$
+
+
+
+%第三题
+\subproblem{}
+$\frac{\partial L}{\partial v_i}$
+
+
+
+
+
+
+
+
+
+
+\problem{CNN}
+We need to calculate $\frac{\partial E}{\partial K}$.
+
+\begin{equation}
+  \begin{aligned}
+  \frac{\partial E}{\partial k} &= \frac{\partial E}{\partial o} \cdot \frac{\partial o}{\partial Y} \cdot \frac{\partial Y}{\partial k} \\
+  &= \left( z - \sigma(W \odot Y) \right) \cdot \sigma'(W \odot Y) \cdot \begin{bmatrix} w_{11} & w_{12} & w_{13} & w_{14} \end{bmatrix} \\
+  &= \left( z - \sigma(W \odot Y) \right) \cdot \sigma'(W \odot Y) \cdot W \ast X \\
+  &= \left( z - \sigma(W \odot Y) \right) (1 - \sigma(W \odot Y)) \cdot W \ast X
+  \end{aligned}
+  \end{equation}
+  
+
+
+
+
+
+\problem{RNN: BPTT}
+We need to calculate $\frac{\partial E }{ \partial V }$, $\frac{\partial E }{ \partial W }$, $\frac{\partial E }{ \partial U }$.
+
+Noticed that $\frac{\partial E}{\partial U}=\Sigma_t\frac{\partial E_t}{\partial U}$(the same is true for the partial derivatives of V and W),
+just take the partial derivative of the loss function at each moment and add it up.
+\subproblem{calculate $\frac{\partial E }{ \partial V }$}
+
+\
+
+$\frac{\partial E_t}{\partial V_{ij}}=tr((\frac{\partial E_t}{\partial z_t})^T\frac{\partial z_t}{\partial V_{ij}})=tr((\hat{o_t}-o_t)^T\begin{bmatrix}0\\\cdots\\\frac{\partial z_t^{(i)}}{\partial V_{ij}}\\\cdots\\0\end{bmatrix})=(\hat{o_t^{(i)}}-o_t^{(i)})h_t^{(j)}$
+
+
+\subsubsection{calculate $(\frac{\partial E_{t}}{\partial z_{t}})^{T}=(\hat{y_{t}}-y_{t})^{T}$}
+\
+\[
+  \left(\frac{\partial E_t}{\partial z_t}\right)^T = \left(\frac{\partial E_t}{\partial \hat{o}_t}\right)^T \frac{\partial \hat{o}_t}{\partial z_t}
+\],
+
+\[
+  \begin{aligned}
+     & \left(\frac{\partial E_t}{\partial \hat{o}_t}\right)^T = \begin{bmatrix}
+                                                                  \frac{\partial (-o_t^{(1)} \log \hat{o}_t^{(1)})}{\partial \hat{o}_t^{(1)}} &
+                                                                  \frac{\partial (-o_t^{(2)} \log \hat{o}_t^{(2)})}{\partial \hat{o}_t^{(2)}} &
+                                                                  \cdots                                                                      &
+                                                                  \frac{\partial (-o_t^{(i)} \log \hat{o}_t^{(i)})}{\partial \hat{o}_t^{(i)}} &
+                                                                  \cdots                                                                      &
+                                                                  \frac{\partial (-o_t^{(k)} \log \hat{o}_t^{(k)})}{\partial \hat{o}_t^{(k)}}
+                                                                \end{bmatrix} \\
+     & = \begin{bmatrix}
+           -\frac{o_t^{(1)}}{\hat{o}_t^{(1)}} &
+           -\frac{o_t^{(2)}}{\hat{o}_t^{(2)}} &
+           \cdots                             &
+           -\frac{o_t^{(i)}}{\hat{o}_t^{(i)}} &
+           \cdots                             &
+           -\frac{o_t^{(k)}}{\hat{o}_t^{(k)}}
+         \end{bmatrix}
+  \end{aligned}
+\],
+
+
+\begin{equation}\frac{\partial\hat{o_t}}{\partial z_t}=\begin{bmatrix}\frac{\partial\hat{o_t^{(1)}}}
+    {\partial z_t^{(1)}}                               & \frac{\partial\hat{o_t^{(2)}}}{\partial z_t^{(1)}} & \cdots                                             & \frac{\partial\hat{o_t^{(k)}}}
+    {\partial z_t^{(1)}}                                                                                                                                                                          \\\frac{\partial\hat{o_t^{(1)}}}{\partial z_t^{(2)}}&\frac{\partial\hat{o_t^{(2)}}}
+    {\partial z_t^{(2)}}                               & \cdots                                             & \frac{\partial\hat{o_t^{(K)}}}{\partial z_t^{(2)}}                                  \\\cdots&\cdots&\cdots&\cdots\\
+    \frac{\partial\hat{o_t^{(1)}}}{\partial z_t^{(k)}} & \frac{\partial\hat{o_t^{(2)}}}{\partial z_t^{(k)}} & \cdots                                             &
+    \frac{\partial\hat{o_t^{(k)}}}{\partial z_t^{(k)}}\end{bmatrix}\end{equation}.
+According to the derivation formula of softmax, we know:
+
+\begin{equation}\frac{\partial o_t^{(i)}}{\partial z_t^{(i)}}=(1-o_t^{(i)})o_t^{(i)}\end{equation},
+\begin{equation}\frac{\partial\hat{o_t^{(j)}}}{\partial z_t^{(k)}}=-\hat{o_t^{(j)}}\hat{o_t^{(k)}},j\neq k\end{equation}
+So:
+\begin{equation}
+  \begin{aligned}
+     & \left(\frac{\partial E_{t}}{\partial \hat{o}_{t}}\right)^{T} \frac{\partial \hat{o}_{t}}{\partial z_{t}}                                      \\
+     & = \begin{bmatrix}
+           \frac{-o_t^{(1)}}{o_t^{(1)}} & \frac{-o_t^{(2)}}{o_t^{(2)}} & \cdots & \frac{-o_t^{(i)}}{o_t^{(i)}} & \cdots & \frac{-o_t^{(k)}}{o_t^{(K)}}
+         \end{bmatrix}
+    \begin{bmatrix}
+      (1-o_t^{(1)})o_t^{(1)} & -o_t^{(1)}o_t^{(2)}    & \cdots & -o_t^{(1)}o_t^{(k)}    \\
+      -o_t^{(2)}o_t^{(1)}    & (1-o_t^{(2)})o_t^{(2)} & \cdots & -o_t^{(2)}o_t^{(k)}    \\
+      \cdots                 & \cdots                 & \ddots & \cdots                 \\
+      -o_t^{(k)}o_t^{(1)}    & -o_t^{(k)}o_t^{(2)}    & \cdots & (1-o_t^{(k)})o_t^{(k)}
+    \end{bmatrix}                                                                \\
+     & = \begin{bmatrix}
+           \hat{o}_t^{(1)} - o_t^{(1)} & \hat{o}_t^{(2)} - o_t^{(2)} & \cdots & \hat{o}_t^{(i)} - o_t^{(i)} & \cdots & \hat{o}_t^{(k)} - o_t^{(k)}
+         \end{bmatrix} = (\hat{o}_t - o_t)^T
+  \end{aligned}
+\end{equation}
+
+
+namely, \begin{equation}\frac{\partial E_{t}}{\partial z_{t}})^{T}=(\hat{y_{t}}-y_{t})^{T}\end{equation}
+
+
+\subsubsection{Derivation of $\frac{\partial z_t}{\partial V_{ij}}$}
+\
+\[
+  \frac{\partial z_t}{\partial V_{ij}} = \begin{bmatrix}
+    \frac{\partial z_t^{(1)}}{\partial V_{ij}} \\
+    \vdots                                     \\
+    \frac{\partial z_t^{(i)}}{\partial V_{ij}} \\
+    \vdots                                     \\
+    \frac{\partial z_t^{(k)}}{\partial V_{ij}}
+  \end{bmatrix}
+\] because $z_t^{(i)}=\Sigma_{l=1}^mV_{il}h_t^{(l)}$, we can get $z_t^{(i)}=\Sigma_{l=1}^mV_{il}h_t^{(l)}$ and
+$\frac{\partial z_t^{(l)}}{\partial V_{ij}}=0,l\neq i$, so:
+
+\[
+  \frac{\partial z_t}{\partial V_{ij}} = \begin{bmatrix}
+    0                                          \\
+    \vdots                                     \\
+    \frac{\partial z_t^{(i)}}{\partial V_{ij}} \\
+    \vdots                                     \\
+    0
+  \end{bmatrix}
+\]
+
+
+Finally, multiply the $(\hat{o_{t}}-o_{t})^{T}$ and $\begin{bmatrix}
+    0                                          \\
+    \vdots                                     \\
+    \frac{\partial z_t^{(i)}}{\partial V_{ij}} \\
+    \vdots                                     \\
+    0
+  \end{bmatrix}$ matrices (vectors) and take the sum of the diagonal elements to get the final result.
+At the same time, according to the relevant knowledge of matrix outer product, we can get:
+\begin{equation}\frac{\partial E_t}{\partial V}=(\hat{o}_t-o_t)\otimes(h_t)^T\end{equation}
+From the above derivation we can get:
+\begin{equation}\frac{\partial E}{\partial V}=\Sigma_t(\hat{o_t}-o_t)\otimes(h_t)^T\end{equation}
+
+
+\subproblem{calculate $\frac{\partial E }{ \partial W }$}
+
+\
+
+Because \( W \) is shared by each time step, the changes in \( W \) caused by the time steps before \( t \) all contribute to \( E_t \), so the entire sequence can be calculated periodically :
+
+\begin{equation}
+  \frac{\partial E_t}{\partial W} = \sum_{k=0}^t \frac{\partial s_k}{\partial W} \frac{\partial E_t}{\partial s_k}
+\end{equation}
+
+Here, due to the derivation algorithm of vectors to matrices, there is:
+\[
+  \frac{\partial E_t}{\partial W_{ij}} = \sum_{k=0}^t \operatorname{tr}\left(\left(\frac{\partial E_t}{\partial s_k}\right)^T \frac{\partial s_k}{\partial W_{ij}}\right) = \sum_{k=0}^t \operatorname{tr}\left(\left(\delta_k \right)^T \frac{\partial s_k}{\partial W_{ij}}\right), \quad \text{where} \ \delta_k = \frac{\partial E_t}{\partial s_k}
+\]
+
+\subsubsection{Derivation of $\delta$}
+
+\
+
+The dependencies of each variable follow:
+\[
+  s_k \rightarrow h_k \rightarrow s_{k+1} \rightarrow \dots \rightarrow s_t \rightarrow h_t \rightarrow E_t
+\]
+
+
+The chain rule is:
+\[
+  \delta_k = \frac{\partial h_k}{\partial s_k} \frac{\partial s_{k+1}}{\partial h_k} \frac{\partial E_t}{\partial s_{k+1}}
+\]
+
+Where $\frac{\partial h_k}{\partial s_k}$ is defined as:
+\[
+  \frac{\partial h_k}{\partial s_k} =
+  \begin{bmatrix}
+    \frac{\partial h_k^{(1)}}{\partial s_k^{(1)}} & \frac{\partial h_k^{(2)}}{\partial s_k^{(1)}} & \cdots & \frac{\partial h_k^{(m)}}{\partial s_k^{(1)}} \\
+    \frac{\partial h_k^{(1)}}{\partial s_k^{(2)}} & \frac{\partial h_k^{(2)}}{\partial s_k^{(2)}} & \cdots & \frac{\partial h_k^{(m)}}{\partial s_k^{(2)}} \\
+    \vdots                                        & \vdots                                        & \ddots & \vdots                                        \\
+    \frac{\partial h_k^{(1)}}{\partial s_k^{(m)}} & \frac{\partial h_k^{(2)}}{\partial s_k^{(m)}} & \cdots & \frac{\partial h_k^{(m)}}{\partial s_k^{(m)}}
+  \end{bmatrix}
+\]
+It is easy to get from the derivation of tanh function:
+\begin{equation}\frac{\partial h_k^{(i)}}{\partial s_k^{(i)}}=1-(h_k^{(i)})^2,\quad\frac{\partial h_k^{(a)}}{\partial s_k^{(b)}}=0,a\neq b\end{equation},
+So:
+\begin{equation}\frac{\partial h_k}{\partial s_k}=\begin{bmatrix}1-(h_k^{(1)})^2 & 0     & \dots & 0     \\0&1-(h_k^{(2)})^2&\dots&0\\
+               \dots           & \dots & \dots & \dots \\0&0&\dots&1-(h_k^{(m)})^2\end{bmatrix}=diag(1-h_k\odot h_k)\end{equation}
+
+It is easy to see that :
+\begin{equation}\frac{\partial s_{k+1}}{\partial h_k}=W^T,\frac{\partial E_t}{\partial s_{k+1}}=\delta_{k+1}\end{equation}
+Thus,
+\begin{equation}\delta_k=\frac{\partial h_k}{\partial s_k}\frac{\partial s_{k+1}}{\partial h_k}\frac{\partial E_t}{\partial s_{k+1}}
+  =diag(1-h_k\odot h_k)U^T\delta_{k+1}=(U^T\delta_{k+1})\odot(1-h_k\odot h_k)\end{equation}
+
+
+
+Next, calculate $\delta_t$, which is easily obtained by the chain rule:
+
+\begin{equation}\delta_t=\frac{\partial h_t}{\partial s_t}\frac{\partial z_t}{\partial h_t}\frac{\partial E_t}{\partial z_t}\end{equation}
+
+It is easy to see that \begin{equation}\frac{\partial z_t}{\partial h_t}=V^T\end{equation},
+
+Already asked for $(\frac{\partial E_{t}}{\partial z_{t}})^{T}=(\hat{o_{t}}-o_{t})^{T}$, we know $\frac{\partial E_{t}}{\partial z_{t}}=\hat{o_{t}}-o_{t}$
+
+Which leads to:
+\begin{equation}\begin{aligned} & \delta_t=\frac{\partial h_t}{\partial s_t}\frac{\partial z_t}{\partial h_t}\frac{\partial E_t}{\partial z_t}
+               =diag(1-h_t\odot h_t)V^T(\hat{o_t}-o_t)=(V^T(\hat{o_t}-o_t))                                                    \\&\odot(1-h_t\odot h_t)\end{aligned}\end{equation}
+
+To sum up, we get the recurrence relation about $\delta$:
+
+\begin{equation}\left.\left\{\begin{array}{l}\delta_t=(V^T(\hat{o_t}-o_t))\odot(1-h_t\odot h_t)\\\delta_k=(U^T\delta_{k+1})\odot(1-h_k\odot h_k)\end{array}\right.\right.\end{equation}
+
+Starting from $\delta_t$, we can push forward every $\delta$.
+
+\subsubsection{calculate $\frac{\partial s_k }{ \partial W_{ij} }$}
+\
+
+For $\frac{\partial s_k }{ \partial W_{ij} }$, because $s_k^{(i)}=\Sigma_{l=1}^mW_{il}h_{k-1}^{(l)}$,
+
+
+To sum up, we get:
+\begin{equation}\frac{\partial E_t}{\partial W_{ij}}=\Sigma_{k=0}^t\delta_k^{(i)}h_{k-1}^{(j)}\end{equation}
+
+
+\begin{equation}\frac{\partial E_t}{\partial W}=\Sigma_{k=0}^t\delta_k\otimes(h_{k-1})^T\end{equation}
+
+
+Final Results:
+\begin{equation}\frac{\partial E}{\partial W}=\Sigma_{t=0}^T\Sigma_{k=0}^t\delta_k\otimes(h_{k-1})^T\end{equation}
+
+
+In order not to lose rigor, define $h_{-1}$is a vector of all 0.
+
+
+\subproblem{calculate $\frac{\partial E }{ \partial U }$}
+\
+
+Same as calculating $\frac{\partial E }{ \partial W }$, we get:
+
+\begin{equation}\frac{\partial E_t}{\partial U}=\Sigma_{k=0}^{t}\delta_{k}\otimes(x_{k})^{T}\end{equation}
+
+
+\begin{equation}\frac{\partial E}{\partial U}=\Sigma_{t=0}^T\Sigma_{k=0}^t\delta_k\otimes(x_k)^T\end{equation}
+
+\vspace{2mm}
+\end{document}
